@@ -62,7 +62,12 @@ def run(fin, fout, skip_empty=False):
     stack = ['ROOT']
     in_package = None
     lines = ['']
-    for line in fin:
+    for line in fin.buffer:
+        try:
+            line = line.decode()
+        except UnicodeDecodeError as e:
+            fout.write(stack[-1] + ':' + str(line) + '\n')
+            continue
         words = chunks(re.split(r'(\s+)', line), 2, '')
         m = re.match('Package (\w+) \w+: ', line)
         if m or (in_package and line.startswith('({0})'.format(in_package))):
