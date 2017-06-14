@@ -13,22 +13,21 @@ def chunks(lst, n, fill=None):
         yield chunk
 
 
-def parse_texfile(word, sep, stack):
+def parse_texfile(word, stack):
     m = re.match(r'(\(*)([^()]*)(\)*)$', word)
     if not m:
-        return word, sep
+        return word
     paren_open, filename, paren_close = m.groups()
     nopen = len(paren_open)
     nclose = len(paren_close)
     if (nopen or nclose) and (filename is '' or os.path.isfile(filename)):
-        filename = word[1:len(word)-nclose]
         if nopen:
             stack.append(filename)
         if nclose:
             for _ in range(nclose):
                 filename = stack.pop()
-        return '', ''
-    return word, sep
+        return ''
+    return word
 
 
 def run(fin, fout):
@@ -39,10 +38,8 @@ def run(fin, fout):
         for word, sep in words:
             if word is '' and sep is '':
                 break
-            word, sep = parse_texfile(word, sep, stack)
+            word = parse_texfile(word, stack)
             linebuff += word + sep
-        if not linebuff.endswith('\n'):
-            linebuff += '\n'
         fout.write(stack[-1] + ':' + linebuff)
     assert stack == ['ROOT']
 
