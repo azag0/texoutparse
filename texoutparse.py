@@ -96,6 +96,13 @@ def run(fin, fout):
     assert stack == ['ROOT']
 
 
+def parse_cli():
+    from argparse import ArgumentParser
+    parser = ArgumentParser()
+    arg = parser.add_argument
+    return vars(parser.parse_args())
+
+
 if __name__ == '__main__':
     import sys
-    run(sys.stdin, sys.stdout)
+    run(sys.stdin, sys.stdout, **parse_cli())
