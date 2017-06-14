@@ -58,7 +58,7 @@ def parse_page(word):
     return word
 
 
-def run(fin, fout):
+def run(fin, fout, skip_empty=False):
     stack = ['ROOT']
     in_package = None
     lines = ['']
@@ -91,7 +91,10 @@ def run(fin, fout):
                 loc = (len(stack), stack[-1])
             lines[-1] += word + sep
         while lines:
-            fout.write(loc[1] + ':' + lines.pop(0))
+            line = lines.pop(0)
+            if skip_empty and not line.strip():
+                continue
+            fout.write(loc[1] + ':' + line)
         lines = ['']
     assert stack == ['ROOT']
 
@@ -100,6 +103,7 @@ def parse_cli():
     from argparse import ArgumentParser
     parser = ArgumentParser()
     arg = parser.add_argument
+    arg('-n', action='store_true', dest='skip_empty', help='skip empty lines')
     return vars(parser.parse_args())
 
 
