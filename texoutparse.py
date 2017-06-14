@@ -60,9 +60,26 @@ def parse_page(word):
 
 def run(fin, fout):
     stack = ['ROOT']
+    in_package = None
     lines = ['']
     for line in fin:
         words = chunks(re.split(r'(\s+)', line), 2, '')
+        m = re.match('Package (\w+) \w+: ', line)
+        if m or (in_package and line.startswith('({0})'.format(in_package))):
+            if m:
+                in_package = m.group(1)
+            else:
+                next(words)
+                lines[0] += ' '
+                lines.append('\n')
+            for word, sep in words:
+                lines[0] += word + sep
+            lines[0] = lines[0].rstrip()
+            continue
+        if in_package:
+            in_package = False
+            lines[0] += '\n'
+            lines.append('')
         loc = (len(stack), stack[-1])
         for word, sep in words:
             if word is '' and sep is '':
