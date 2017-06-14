@@ -13,10 +13,10 @@ def chunks(lst, n, fill=None):
         yield chunk
 
 
-def parse_word(word, stack):
+def parse_texfile(word, sep, stack):
     m = re.match(r'(\(*)([^()]*)(\)*)$', word)
     if not m:
-        return
+        return word, sep
     paren_open, filename, paren_close = m.groups()
     nopen = len(paren_open)
     nclose = len(paren_close)
@@ -27,7 +27,8 @@ def parse_word(word, stack):
         if nclose:
             for _ in range(nclose):
                 filename = stack.pop()
-        return True
+        return '', ''
+    return word, sep
 
 
 def run(fin, fout):
@@ -38,8 +39,8 @@ def run(fin, fout):
         for word, sep in words:
             if word is '' and sep is '':
                 break
-            if not parse_word(word, stack):
-                linebuff += word + sep
+            word, sep = parse_texfile(word, sep, stack)
+            linebuff += word + sep
         if not linebuff.endswith('\n'):
             linebuff += '\n'
         fout.write(stack[-1] + ':' + linebuff)
