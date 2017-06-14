@@ -25,7 +25,7 @@ def parse_texfile(word, stack):
             stack.append(filename)
         if nclose:
             for _ in range(nclose):
-                filename = stack.pop()
+                stack.pop()
         return ''
     return word
 
@@ -41,8 +41,20 @@ def parse_pdffig(word, stack):
         if nopen:
             stack.append(filename)
         if nclose:
-            filename = stack.pop()
+            stack.pop()
         return rest
+    return word
+
+
+def parse_page(word):
+    m = re.match(r'(\[?)(\d*)({[^{}]+})?(\]?)$', word)
+    if not m:
+        return word
+    paren_open, page, _, paren_close = m.groups()
+    nopen = len(paren_open)
+    nclose = len(paren_close)
+    if nopen or nclose:
+        return ''
     return word
 
 
@@ -57,6 +69,7 @@ def run(fin, fout):
                 break
             word = parse_texfile(word, stack)
             word = parse_pdffig(word, stack)
+            word = parse_page(word)
             if len(stack) < loc[0]:
                 loc = (len(stack), stack[-1])
             linebuff += word + sep
