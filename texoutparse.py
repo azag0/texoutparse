@@ -60,9 +60,9 @@ def parse_page(word):
 
 def run(fin, fout):
     stack = ['ROOT']
+    lines = ['']
     for line in fin:
         words = chunks(re.split(r'(\s+)', line), 2, '')
-        linebuff = ''
         loc = (len(stack), stack[-1])
         for word, sep in words:
             if word is '' and sep is '':
@@ -72,8 +72,10 @@ def run(fin, fout):
             word = parse_page(word)
             if len(stack) < loc[0]:
                 loc = (len(stack), stack[-1])
-            linebuff += word + sep
-        fout.write(loc[1] + ':' + linebuff)
+            lines[-1] += word + sep
+        while lines:
+            fout.write(loc[1] + ':' + lines.pop(0))
+        lines = ['']
     assert stack == ['ROOT']
 
 
