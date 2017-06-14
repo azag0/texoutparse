@@ -101,7 +101,8 @@ def run(fin, fout, skip_empty=False):
                 continue
             fout.write(loc[1] + ':' + line)
         lines = ['']
-    assert stack == ['ROOT']
+    if stack != ['ROOT']:
+        raise RuntimeError('Invalid final stack:', stack)
 
 
 def parse_cli():
