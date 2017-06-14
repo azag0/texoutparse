@@ -30,6 +30,22 @@ def parse_texfile(word, stack):
     return word
 
 
+def parse_pdffig(word, stack):
+    m = re.match(r'(<?)([^<>]*)(>?)(\]?)$', word)
+    if not m:
+        return word
+    paren_open, filename, paren_close, rest = m.groups()
+    nopen = len(paren_open)
+    nclose = len(paren_close)
+    if (nopen or nclose) and (filename is '' or os.path.isfile(filename)):
+        if nopen:
+            stack.append(filename)
+        if nclose:
+            filename = stack.pop()
+        return rest
+    return word
+
+
 def run(fin, fout):
     stack = ['ROOT']
     for line in fin:
@@ -40,6 +56,7 @@ def run(fin, fout):
             if word is '' and sep is '':
                 break
             word = parse_texfile(word, stack)
+            word = parse_pdffig(word, stack)
             if len(stack) < loc[0]:
                 loc = (len(stack), stack[-1])
             linebuff += word + sep
