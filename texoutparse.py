@@ -4,6 +4,8 @@
 import os
 import re
 
+# TODO isolated ), >
+
 
 def chunks(lst, n, fill=None):
     for i in range(0, len(lst), n):
@@ -20,7 +22,8 @@ def parse_texfile(word, stack):
     paren_open, filename, paren_close = m.groups()
     nopen = len(paren_open)
     nclose = len(paren_close)
-    if (nopen or nclose) and (filename is '' or os.path.isfile(filename)):
+    if (nopen and filename or nclose) and \
+            (filename is '' or os.path.isfile(filename)):
         if nopen:
             stack.append(filename)
         if nclose:
@@ -31,7 +34,7 @@ def parse_texfile(word, stack):
 
 
 def parse_pdffig(word, stack):
-    m = re.match(r'(<?)([^<>]*)(>?)(\]?)$', word)
+    m = re.match(r'(<?)([^<>]*)(>?)(\]?\)?)$', word)
     if not m:
         return word
     paren_open, filename, paren_close, rest = m.groups()
@@ -47,14 +50,14 @@ def parse_pdffig(word, stack):
 
 
 def parse_page(word):
-    m = re.match(r'(\[?)(\d*)({[^{}]+})?(\]?)$', word)
+    m = re.match(r'(\[?)(\d*)({[^{}]+})?(\]?)(\)?)$', word)
     if not m:
         return word
-    paren_open, page, _, paren_close = m.groups()
+    paren_open, page, _, paren_close, rest = m.groups()
     nopen = len(paren_open)
     nclose = len(paren_close)
-    if nopen or nclose:
-        return ''
+    if nopen and page or nclose:
+        return rest
     return word
 
 
@@ -89,9 +92,9 @@ def run(fin, fout, skip_empty=False):
         for word, sep in words:
             if word is '' and sep is '':
                 break
-            word = parse_texfile(word, stack)
             word = parse_pdffig(word, stack)
             word = parse_page(word)
+            word = parse_texfile(word, stack)
             if len(stack) < loc[0]:
                 loc = (len(stack), stack[-1])
             lines[-1] += word + sep
