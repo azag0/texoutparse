@@ -35,12 +35,15 @@ def run(fin, fout):
     for line in fin:
         words = chunks(re.split(r'(\s+)', line), 2, '')
         linebuff = ''
+        loc = (len(stack), stack[-1])
         for word, sep in words:
             if word is '' and sep is '':
                 break
             word = parse_texfile(word, stack)
+            if len(stack) < loc[0]:
+                loc = (len(stack), stack[-1])
             linebuff += word + sep
-        fout.write(stack[-1] + ':' + linebuff)
+        fout.write(loc[1] + ':' + linebuff)
     assert stack == ['ROOT']
 
 
