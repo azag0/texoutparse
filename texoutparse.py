@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 import os
 import re
+import io
 
 # TODO isolated ), >
 
@@ -108,14 +109,45 @@ def run(fin, fout, skip_empty=False):
         raise RuntimeError('Invalid final stack:', stack)
 
 
+def select_last(fin, fout, **kwargs):
+    foutbuff = io.StringIO()
+    run(fin, foutbuff, **kwargs)
+    current = None
+    last = None
+    for line in foutbuff.getvalue().split('\n'):
+        if line.startswith('ROOT:This is pdfTeX'):
+            current = ''
+        if current is not None:
+            current += line + '\n'
+        if line.startswith('ROOT:Transcript written'):
+            assert current
+            last = current
+            current = None
+    assert not current
+    if not last:
+        raise RuntimeError('No pdftex output found')
+    fout.write(last)
+
+
 def parse_cli():
     from argparse import ArgumentParser
     parser = ArgumentParser()
     arg = parser.add_argument
     arg('-n', action='store_true', dest='skip_empty', help='skip empty lines')
+    arg('-l', action='store_true', dest='only_last', help=(
+        'if multiple pdftex runs, print only last '
+        '(this prints only at the end)'
+    ))
     return vars(parser.parse_args())
+
+
+def main(fin, fout, only_last=False, **kwargs):
+    if only_last:
+        select_last(fin, fout, **kwargs)
+    else:
+        run(fin, fout, **kwargs)
 
 
 if __name__ == '__main__':
     import sys
-    run(sys.stdin, sys.stdout, **parse_cli())
+    main(sys.stdin, sys.stdout, **parse_cli())
