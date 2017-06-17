@@ -44,23 +44,6 @@ def parse_round(word, stack):
     return new_word
 
 
-def parse_angle(word, stack):
-    m = re.match(r'(<?)([^<>]*)(>?)(\]?\)?)$', word)
-    if not m:
-        return word
-    paren_open, filename, paren_close, rest = m.groups()
-    nopen = len(paren_open)
-    nclose = len(paren_close)
-    if (nopen or nclose) and (filename is '' or os.path.isfile(filename)):
-        if nopen:
-            stack.append(filename)
-            debug('pushed', filename, word)
-        if nclose:
-            debug('popped', stack.pop(), word)
-        return rest
-    return word
-
-
 def parse_square(word, stack):
     m = re.match(r'(\[?)(\d*)({[^{}]+})?(\]?)(\)?)$', word)
     if not m:
@@ -73,6 +56,23 @@ def parse_square(word, stack):
             name = stack[-1] + ':[{}]'.format(page)
             stack.append(name)
             debug('pushed', name, word)
+        if nclose:
+            debug('popped', stack.pop(), word)
+        return rest
+    return word
+
+
+def parse_angle(word, stack):
+    m = re.match(r'(<?)([^<>]*)(>?)(\]?\)?)$', word)
+    if not m:
+        return word
+    paren_open, filename, paren_close, rest = m.groups()
+    nopen = len(paren_open)
+    nclose = len(paren_close)
+    if (nopen or nclose) and (filename is '' or os.path.isfile(filename)):
+        if nopen:
+            stack.append(filename)
+            debug('pushed', filename, word)
         if nclose:
             debug('popped', stack.pop(), word)
         return rest
