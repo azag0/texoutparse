@@ -6,8 +6,6 @@ import re
 import io
 import sys
 
-# TODO isolated ), >
-
 DEBUG = bool(os.environ.get('DEBUG'))
 
 
@@ -25,22 +23,25 @@ def chunks(lst, n, fill=None):
 
 
 def parse_texfile(word, stack):
-    m = re.match(r'(\(*)([^()]*)(\)*)$', word)
-    if not m:
-        return word
-    paren_open, filename, paren_close = m.groups()
-    nopen = len(paren_open)
-    nclose = len(paren_close)
-    if (nopen and filename or nclose) and \
-            (filename is '' or os.path.isfile(filename)):
-        if nopen:
+    m = re.match(r'\(([^()]*)(.*)?$', word)
+    if m:
+        filename, rest = m.groups()
+        if os.path.isfile(filename):
             stack.append(filename)
-            debug('pushed', word, filename)
-        if nclose:
-            for _ in range(nclose):
-        return ''
-                debug('popped', word, stack.pop())
-    return word
+            debug('pushed', filename, word)
+            word = rest
+    new_word = ''
+    for c in word:
+        if c == '(':
+            stack.append('(')
+            debug('pushed', '(', word)
+        elif c == ')':
+            popped = stack.pop()
+            debug('popped', popped, word)
+            if popped != '(':
+                continue
+        new_word += c
+    return new_word
 
 
 def parse_pdffig(word, stack):
@@ -115,6 +116,7 @@ def run(fin, fout, skip_empty=False):
             if len(stack) < loc[0]:
                 loc = (len(stack), stack[-1])
             lines[-1] += word + sep
+        assert loc[1] != '('
         while lines:
             line = lines.pop(0)
             if skip_empty and not line.strip():
