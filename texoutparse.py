@@ -22,7 +22,7 @@ def chunks(lst, n, fill=None):
         yield chunk
 
 
-def parse_texfile(word, stack):
+def parse_round(word, stack):
     m = re.match(r'\(([^()]*)(.*)?$', word)
     if m:
         filename, rest = m.groups()
@@ -44,7 +44,7 @@ def parse_texfile(word, stack):
     return new_word
 
 
-def parse_pdffig(word, stack):
+def parse_angle(word, stack):
     m = re.match(r'(<?)([^<>]*)(>?)(\]?\)?)$', word)
     if not m:
         return word
@@ -61,7 +61,7 @@ def parse_pdffig(word, stack):
     return word
 
 
-def parse_page(word, stack):
+def parse_square(word, stack):
     m = re.match(r'(\[?)(\d*)({[^{}]+})?(\]?)(\)?)$', word)
     if not m:
         return word
@@ -110,9 +110,9 @@ def run(fin, fout, skip_empty=False):
         for word, sep in words:
             if word is '' and sep is '':
                 break
-            word = parse_pdffig(word, stack)
-            word = parse_page(word, stack)
-            word = parse_texfile(word, stack)
+            word = parse_angle(word, stack)
+            word = parse_square(word, stack)
+            word = parse_round(word, stack)
             if len(stack) < loc[0]:
                 loc = (len(stack), stack[-1])
             lines[-1] += word + sep
