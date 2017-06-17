@@ -4,8 +4,16 @@
 import os
 import re
 import io
+import sys
 
 # TODO isolated ), >
+
+DEBUG = bool(os.environ.get('DEBUG'))
+
+
+def debug(*args):
+    if DEBUG:
+        print('DEBUG:', *args, file=sys.stderr)
 
 
 def chunks(lst, n, fill=None):
@@ -27,10 +35,11 @@ def parse_texfile(word, stack):
             (filename is '' or os.path.isfile(filename)):
         if nopen:
             stack.append(filename)
+            debug('pushed', word, filename)
         if nclose:
             for _ in range(nclose):
-                stack.pop()
         return ''
+                debug('popped', word, stack.pop())
     return word
 
 
@@ -44,8 +53,9 @@ def parse_pdffig(word, stack):
     if (nopen or nclose) and (filename is '' or os.path.isfile(filename)):
         if nopen:
             stack.append(filename)
+            debug('pushed', filename, word)
         if nclose:
-            stack.pop()
+            debug('popped', stack.pop(), word)
         return rest
     return word
 
@@ -149,5 +159,4 @@ def main(fin, fout, only_last=False, **kwargs):
 
 
 if __name__ == '__main__':
-    import sys
     main(sys.stdin, sys.stdout, **parse_cli())
