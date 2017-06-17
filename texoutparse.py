@@ -60,7 +60,7 @@ def parse_pdffig(word, stack):
     return word
 
 
-def parse_page(word):
+def parse_page(word, stack):
     m = re.match(r'(\[?)(\d*)({[^{}]+})?(\]?)(\)?)$', word)
     if not m:
         return word
@@ -68,6 +68,12 @@ def parse_page(word):
     nopen = len(paren_open)
     nclose = len(paren_close)
     if nopen and page or nclose:
+        if nopen:
+            name = stack[-1] + ':[{}]'.format(page)
+            stack.append(name)
+            debug('pushed', name, word)
+        if nclose:
+            debug('popped', stack.pop(), word)
         return rest
     return word
 
@@ -104,7 +110,7 @@ def run(fin, fout, skip_empty=False):
             if word is '' and sep is '':
                 break
             word = parse_pdffig(word, stack)
-            word = parse_page(word)
+            word = parse_page(word, stack)
             word = parse_texfile(word, stack)
             if len(stack) < loc[0]:
                 loc = (len(stack), stack[-1])
