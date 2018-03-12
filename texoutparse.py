@@ -23,7 +23,10 @@ def chunks(lst, n, fill=None):
 
 
 def parse_round(word, stack):
-    m = re.match(r'\(([^()]*)(.*)?$', word)
+    m = re.match(
+        r'\(([a-zA-Z0-9._\-/]*\.(?:tex|bbl|aux|cls|cfg|def|sty|fd|clo|mkii|out|toc|ind|dfu|rtx|tdo))(.*)?$',
+        word
+    )
     if m:
         filename, rest = m.groups()
         if os.path.isfile(filename):
@@ -38,6 +41,7 @@ def parse_round(word, stack):
         elif c == ')':
             popped = stack.pop()
             debug('popped', popped, word)
+            assert popped == '(' or len(popped) > 1
             if popped != '(':
                 continue
         new_word += c
@@ -63,7 +67,7 @@ def parse_square(word, stack):
 
 
 def parse_angle(word, stack):
-    m = re.match(r'(<?)([^<>]*)(>?)(\]?\)?)$', word)
+    m = re.match(r'(<?)([a-zA-Z0-9._\-/]*)(>?)(,?\]?\)?)$', word)
     if not m:
         return word
     paren_open, filename, paren_close, rest = m.groups()
@@ -84,6 +88,7 @@ def run(fin, fout, skip_empty=False):
     in_package = None
     lines = ['']
     for line in fin.buffer:
+        operate_on = -1
         try:
             line = line.decode()
         except UnicodeDecodeError as e:
@@ -106,6 +111,20 @@ def run(fin, fout, skip_empty=False):
             in_package = False
             lines[0] += '\n'
             lines.append('')
+        if line.startswith('Overfull \\hbox') or line.startswith('Underfull \\hbox'):
+            next(fin.buffer)
+            lines.append('\n')
+            operate_on = 0
+        if re.match(r'l\.\d+ |<argument> ', line):
+            next_line = next(fin.buffer).decode()
+            if next_line.strip() and \
+                    len(next_line)-len(next_line.lstrip()) >= len(line.rstrip()):
+                lines[0] = line.rstrip() + '<<<' + next_line.lstrip()
+                lines.append('\n')
+            else:
+                lines[0] = line
+                lines.append(next_line)
+            words = []
         loc = (len(stack), stack[-1])
         for word, sep in words:
             if word is '' and sep is '':
@@ -115,7 +134,7 @@ def run(fin, fout, skip_empty=False):
             word = parse_round(word, stack)
             if len(stack) < loc[0]:
                 loc = (len(stack), stack[-1])
-            lines[-1] += word + sep
+            lines[operate_on] += word + sep
         assert loc[1] != '('
         while lines:
             line = lines.pop(0)
@@ -142,8 +161,6 @@ def select_last(fin, fout, **kwargs):
             last = current
             current = None
     assert not current
-    if not last:
-        raise RuntimeError('No pdftex output found')
     fout.write(last)
 
 
