@@ -88,6 +88,7 @@ def run(fin, fout, skip_empty=False):
     in_package = None
     lines = ['']
     for line in fin.buffer:
+        line = line.replace(b' (PNG copy)', b'')
         operate_on = -1
         try:
             line = line.decode()
